@@ -1,0 +1,12 @@
+--- !ruby/object:Hangman
+dictionary: 5desk.txt
+letter_attempts:
+- a
+- e
+- i
+- o
+- u
+remaining_guess: 5
+player_guess: _ e _ _ i _ e _ _ e
+word_to_guess: negligence
+
