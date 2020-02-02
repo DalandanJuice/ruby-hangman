@@ -1,12 +1,18 @@
 --- !ruby/object:Hangman
 dictionary: 5desk.txt
+letter_attempts: []
+remaining_guess: 10
+player_guess: '_ _ _ _ _ _ _ _ _ _ _ _ '
+word_to_guess: arithmetical
+savestates: []
+
+--- !ruby/object:Hangman
+dictionary: 5desk.txt
 letter_attempts:
 - a
 - e
 - i
-- o
-- u
-remaining_guess: 5
-player_guess: _ e _ _ i _ e _ _ e
-word_to_guess: negligence
+remaining_guess: 7
+player_guess: _ e e _ i _ e _ _
+word_to_guess: beefiness
 

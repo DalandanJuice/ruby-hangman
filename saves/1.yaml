@@ -1,0 +1,11 @@
+--- !ruby/object:Hangman
+dictionary: 5desk.txt
+letter_attempts:
+- a
+- e
+- i
+- o
+- u
+remaining_guess: 5
+player_guess: i _ i _ e _
+word_to_guess: irides

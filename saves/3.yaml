@@ -1,0 +1,9 @@
+--- !ruby/object:Hangman
+dictionary: 5desk.txt
+letter_attempts:
+- c
+- e
+- a
+remaining_guess: 7
+player_guess: _ _ a _ a _ _ e _ _ c
+word_to_guess: diamagnetic
