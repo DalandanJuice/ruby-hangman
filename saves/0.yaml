@@ -1,9 +1,19 @@
---- !ruby/object:Hangman
+--- &1 !ruby/object:Hangman
 dictionary: 5desk.txt
 letter_attempts:
 - a
 - e
 - i
-remaining_guess: 7
-player_guess: i _ i _ e _
-word_to_guess: irides
+- o
+- u
+- t
+- n
+- r
+- s
+- b
+remaining_guess: 6
+player_guess: b r e a _ _ a s t
+word_to_guess: breakfast
+board: !ruby/object:Board
+  hangman: *1
+save_file_manager: !ruby/object:SaveFileManager {}

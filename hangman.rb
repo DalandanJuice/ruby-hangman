@@ -30,7 +30,15 @@ class Board
     hangman.remaining_guess -= 1 unless hangman.word_to_guess.include?(letter)
     hangman.include_letter(letter)
   end
+
+  def show_instructions
+    puts "Type only one letter to guess each letters one by one"
+    puts "Type save in order to save your game"
+    puts 'Type load to load your game that is saved"'
+  end
+
   private
+
   def diagram()
     template = File.read("stickman.erb")
     erb = ERB.new(template)
@@ -38,28 +46,23 @@ class Board
     puts ""
     puts result
   end
-
-  def show_instructions
-    puts "Type only one letter to guess each letters one by one"
-    puts "Type save in order to save your game"
-    puts 'Type load to load your game that is saved"'
-  end
 end
 #Sets the rules for the game
 class Hangman 
-  attr_accessor :word_to_guess, :remaining_guess, :player_guess, :letter_attempts, :save_count
+  attr_accessor :word_to_guess, :remaining_guess, :player_guess, :letter_attempts, :save_file_manager
   attr_reader :dictionary, :board
-  def initialize
-    @dictionary = "5desk.txt"
+  def initialize(dictionary)
     @letter_attempts = []
     @remaining_guess = 10
     @player_guess = ''
     @word_to_guess = ''
     @board = Board.new(self)
+    @save_file_manager = SaveFileManager.new
+    @dictionary = dictionary
   end
 
   def start
-    show_instructions()
+    board.show_instructions()
     self.word_to_guess = get_random_word
     self.player_guess = fill_with_blanks(word_to_guess.length)
     board.display()
@@ -73,8 +76,8 @@ class Hangman
   def play_game
     puts "Type only one letter to guess each letters one by one"
     command = gets.chomp
-    save_game if command == 'save'
-    load_game if command == 'load'
+    save_file_manager.save_game(self) if command == 'save'
+    save_file_manager.load_game(self) if command == 'load'
 
     if is_a_letter?(command)
       board.insert_letter(command)
@@ -136,7 +139,6 @@ class Hangman
     word = word[0..word.length - 3]
   end
 
-
   def save_game()
     count = 0
     file = ''
@@ -148,7 +150,7 @@ class Hangman
     File.open(file,"w") do |file|
       file.puts YAML::dump(self)
     end
-  end
+    end
 
   def show_saved_files()
     id = 0
@@ -156,9 +158,7 @@ class Hangman
     while !File.exists?(file_name) 
       file_name = "saves/#{id}.yaml"
       puts "Number: #{id}"
-      line = File.readline(file_name)
-      next if line.contains?("word_to_guess")
-      puts line
+      read_saves(file_name)
       id += 1
     end
   end
@@ -182,7 +182,7 @@ class Hangman
       self.word_to_guess = savestate.word_to_guess
       self.player_guess = savestate.player_guess
     end
-  end
+    end
 
   def is_between_5_and_12?(word)
     word_length = word.length - 2
@@ -195,6 +195,7 @@ class Hangman
     while i < word_length
       word += ("_ ")
       i += 1
+
     end
     word
   end
@@ -204,7 +205,82 @@ class SaveFileManager
   def initialize()
 
   end
+  def save_game(hangman)
+    count = 0
+    file = ''
+    file = "saves/#{count}.yaml"
+    while File.exists?("saves/#{count}.yaml")
+      count += 1
+      file = "saves/#{count}.yaml"
+    end
+    File.open(file,"w") do |file|
+      file.puts YAML::dump(hangman)
+    end
+  end
+
+  def show_files()
+    id = 0
+    file_name = "#{id}.yaml"
+    line = ''
+    while File.exists?("saves/#{file_name}")
+      puts "ID: #{id}"
+      read_file(file_name)
+      puts " "
+      id += 1
+      file_name = "#{id}.yaml"
+    end
+  end
+
+  def load_game(hangman)
+    number = ''
+    show_files()
+    until File.exists?("saves/#{number}.yaml")
+      puts "Choose your savestate. Type exit to quit"
+      number = gets.chomp
+      return if number == 'exit'
+    end
+    savestate = ''
+    File.open("saves/#{number.to_i}.yaml","r") { |file| savestate = YAML::load(file)}
+    hangman = savestate
+  end
+  private
+
+  def read_file(file_name)
+    File.open("saves/#{file_name}","r") do |file|
+    while !file.eof?
+        line = file.readline
+        break if line.include?("word_to_guess")
+        puts line
+      end
+    end
+  end
+
+  def reinitialize(savestate)
+    puts savestate.word_to_guess
+    hangman = Hangman.new(savestate.dictionary)
+    hangman.letter_attempts = savestate.letter_attempts
+    hangman.remaining_guess = savestate.remaining_guess
+    hangman.word_to_guess = savestate.word_to_guess
+    hangman.player_guess = savestate.player_guess
+    puts "reinitialized"
+  end
 end
 
-a = Hangman.new
-a.start
+a = Hangman.new("5desk.txt")
+
+class A
+  attr_accessor :number
+  def initialize(number)
+    @number = number
+  end
+  def to_s
+    "Number: #{number}"
+  end
+end
+a = A.new(0)
+b = A.new(100)
+puts "A: #{a}"
+puts "B: #{b}"
+a = b
+puts "Ching!"
+puts "A: #{a}"
