@@ -57,7 +57,7 @@ class Hangman
     @player_guess = ''
     @word_to_guess = ''
     @board = Board.new(self)
-    @save_file_manager = SaveFileManager.new
+    @save_file_manager = SaveFileManager.new(self)
     @dictionary = dictionary
   end
 
@@ -77,11 +77,12 @@ class Hangman
     puts "Type only one letter to guess each letters one by one"
     command = gets.chomp
     save_file_manager.save_game(self) if command == 'save'
-    save_file_manager.load_game(self) if command == 'load'
+    save_file_manager.load_game() if command == 'load'
 
     if is_a_letter?(command)
       board.insert_letter(command)
     end
+    puts word_to_guess
   end
 
   def wrong_attempts
@@ -100,8 +101,7 @@ class Hangman
     word = player_guess.split(' ')
     word = word.join('')
     return remaining_guess == 0 || word == word_to_guess
-    end
-
+  end
 
   def include_letter(letter)
     word = self.player_guess.split(' ')
@@ -119,9 +119,7 @@ class Hangman
 
   def is_included?(letter, array)
     unless array.include?(letter)
-      unless word_to_guess.include?(letter.downcase) || word_to_guess.include?(letter.upcase)
-        return true
-      end
+    return word_to_guess.include?(letter.downcase) || word_to_guess.include?(letter.upcase)
     end
     return false
   end
@@ -139,51 +137,6 @@ class Hangman
     word = word[0..word.length - 3]
   end
 
-  def save_game()
-    count = 0
-    file = ''
-    file = "saves/#{count}.yaml"
-    while File.exists?("saves/#{count}.yaml")
-      count += 1
-      file = "saves/#{count}.yaml"
-    end
-    File.open(file,"w") do |file|
-      file.puts YAML::dump(self)
-    end
-    end
-
-  def show_saved_files()
-    id = 0
-    file_name = ''
-    while !File.exists?(file_name) 
-      file_name = "saves/#{id}.yaml"
-      puts "Number: #{id}"
-      read_saves(file_name)
-      id += 1
-    end
-  end
-
-  def show_save_content(filename)
-    File.open(filename,"w") do |file| 
-
-    end
-  end
-
-  def load_game()
-    number = ''
-    show_saved_files()
-    puts "Choose your savestates" 
-    number = gets.chomp.to_i
-
-    File.open("saves/#{number}.yaml","r") do |file|
-      savestate = YAML::load(file)
-      self.letter_attempts = savestate.letter_attempts
-      self.remaining_guess = savestate.remaining_guess
-      self.word_to_guess = savestate.word_to_guess
-      self.player_guess = savestate.player_guess
-    end
-    end
-
   def is_between_5_and_12?(word)
     word_length = word.length - 2
    return word_length >= 5 &&  word_length <= 12
@@ -195,16 +148,17 @@ class Hangman
     while i < word_length
       word += ("_ ")
       i += 1
-
     end
     word
   end
 end
 
 class SaveFileManager
-  def initialize()
-
+  attr_accessor :hangman
+  def initialize(hangman)
+    @hangman = hangman
   end
+
   def save_game(hangman)
     count = 0
     file = ''
@@ -231,7 +185,7 @@ class SaveFileManager
     end
   end
 
-  def load_game(hangman)
+  def load_game()
     number = ''
     show_files()
     until File.exists?("saves/#{number}.yaml")
@@ -241,7 +195,7 @@ class SaveFileManager
     end
     savestate = ''
     File.open("saves/#{number.to_i}.yaml","r") { |file| savestate = YAML::load(file)}
-    hangman = savestate
+    reinitialize(savestate)
   end
   private
 
@@ -256,31 +210,14 @@ class SaveFileManager
   end
 
   def reinitialize(savestate)
-    puts savestate.word_to_guess
-    hangman = Hangman.new(savestate.dictionary)
-    hangman.letter_attempts = savestate.letter_attempts
-    hangman.remaining_guess = savestate.remaining_guess
-    hangman.word_to_guess = savestate.word_to_guess
-    hangman.player_guess = savestate.player_guess
+    self.hangman.letter_attempts = savestate.letter_attempts
+    self.hangman.remaining_guess = savestate.remaining_guess
+    self.hangman.word_to_guess = savestate.word_to_guess
+    self.hangman.player_guess = savestate.player_guess
     puts "reinitialized"
   end
 end
 
 a = Hangman.new("5desk.txt")
+a.start
 
-class A
-  attr_accessor :number
-  def initialize(number)
-    @number = number
-  end
-  def to_s
-    "Number: #{number}"
-  end
-end
-a = A.new(0)
-b = A.new(100)
-puts "A: #{a}"
-puts "B: #{b}"
-a = b
-puts "Ching!"
-puts "A: #{a}"
