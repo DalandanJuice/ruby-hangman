@@ -10,24 +10,24 @@ class Board
   def display()
     puts "remaining_guess: #{hangman.remaining_guess}"
     print diagram
-    puts hangman.player_guess
-    puts "Wrong_attemptsf: " + hangman.wrong_attempts.join(',')
+    puts hangman.player.word
+    puts "Wrong_attempts: " + hangman.wrong_attempts.join(',')
   end
-
+  
   def show_result()
-    word = hangman.player_guess.split(' ')
+    word = hangman.player.word.split(' ')
     word = word.join('')
     if hangman.remaining_guess == 0
       puts 'Game Over!'
-      puts "The word is #{hangman.word_to_guess} "
-    elsif word == hangman.word_to_guess
+      puts "The word is #{hangman.computer.word}"
+    elsif word == hangman.computer.word
       puts 'Congratulations! You Win!'
     end
   end
 
   def insert_letter(letter)
     hangman.letter_attempts.push(letter)
-    hangman.remaining_guess -= 1 unless hangman.word_to_guess.include?(letter)
+    hangman.remaining_guess -= 1 unless hangman.computer.word.include?(letter)
     hangman.include_letter(letter)
   end
 
@@ -47,24 +47,62 @@ class Board
     puts result
   end
 end
+
+class Player
+  attr_accessor :word
+  def initialize()
+    @word = ''
+  end
+
+  def guess
+    puts "Type only one letter to guess each letters one by one"
+    command = gets.chomp
+  end
+end
+
+class Computer
+  attr_accessor :word
+  def initialize()
+    @word = ''
+  end
+  def get_random_word()
+    word = ''
+    File.open("5desk.txt",'r') do |file|
+      lines = file.readlines
+      random_index = 0
+      while !is_between_5_and_12?(lines[random_index])
+        random_index = Random.rand(lines.length)
+      end
+      word = lines[random_index]
+    end
+    self.word = word[0..word.length - 3]
+  end
+
+  private
+
+  def is_between_5_and_12?(word)
+    word_length = word.length - 2
+    return word_length >= 5 &&  word_length <= 12
+  end
+end
 #Sets the rules for the game
 class Hangman 
-  attr_accessor :word_to_guess, :remaining_guess, :player_guess, :letter_attempts, :save_file_manager
+  attr_accessor :remaining_guess, :letter_attempts, :save_file_manager, :player, :computer
   attr_reader :dictionary, :board
   def initialize(dictionary)
     @letter_attempts = []
     @remaining_guess = 10
-    @player_guess = ''
-    @word_to_guess = ''
     @board = Board.new(self)
+    @player = Player.new
+    @computer = Computer.new
     @save_file_manager = SaveFileManager.new(self)
     @dictionary = dictionary
   end
 
   def start
     board.show_instructions()
-    self.word_to_guess = get_random_word
-    self.player_guess = fill_with_blanks(word_to_guess.length)
+    computer.get_random_word()
+    player.word = fill_with_blanks(computer.word.length)
     board.display()
     while game_over? == false
       play_game
@@ -74,21 +112,19 @@ class Hangman
   end
 
   def play_game
-    puts "Type only one letter to guess each letters one by one"
-    command = gets.chomp
-    save_file_manager.save_game(self) if command == 'save'
+    command = player.guess
+    save_file_manager.save_game() if command == 'save'
     save_file_manager.load_game() if command == 'load'
 
     if is_a_letter?(command)
       board.insert_letter(command)
     end
-    puts word_to_guess
   end
 
   def wrong_attempts
     wrong_attempts = []
     letter_attempts.each do |letter|
-      wrong_attempts.push(letter) if is_included?(letter,wrong_attempts)
+      wrong_attempts.push(letter) if !is_included?(letter,wrong_attempts)
     end
     wrong_attempts
   end
@@ -98,48 +134,29 @@ class Hangman
   end
 
   def game_over?
-    word = player_guess.split(' ')
-    word = word.join('')
-    return remaining_guess == 0 || word == word_to_guess
+    word = player.word.split(' ').join('')
+    return remaining_guess == 0 || word == computer.word
   end
 
   def include_letter(letter)
-    word = self.player_guess.split(' ')
+    word = self.player.word.split(' ')
     i = 0
-    while i < word_to_guess.length
-      if letter.downcase == word_to_guess[i].downcase
-        word[i] = word_to_guess[i]
+    while i < computer.word.length
+      if letter.downcase == computer.word.downcase[i]
+        word[i] = computer.word[i]
       end
       i += 1
     end
-    self.player_guess = word.join(' ')
+    self.player.word = word.join(' ')
   end
 
   private
 
   def is_included?(letter, array)
     unless array.include?(letter)
-    return word_to_guess.include?(letter.downcase) || word_to_guess.include?(letter.upcase)
+    return computer.word.include?(letter.downcase) || computer.word.include?(letter.upcase)
     end
     return false
-  end
-
-  def get_random_word()
-    word = ''
-    File.open("5desk.txt",'r') do |file|
-      lines = file.readlines
-      random_index = 0
-      while !is_between_5_and_12?(lines[random_index])
-        random_index = Random.rand(lines.length)
-        end
-      word = lines[random_index]
-    end
-    word = word[0..word.length - 3]
-  end
-
-  def is_between_5_and_12?(word)
-    word_length = word.length - 2
-   return word_length >= 5 &&  word_length <= 12
   end
 
   def fill_with_blanks(word_length)
@@ -159,7 +176,7 @@ class SaveFileManager
     @hangman = hangman
   end
 
-  def save_game(hangman)
+  def save_game()
     count = 0
     file = ''
     file = "saves/#{count}.yaml"
@@ -197,13 +214,15 @@ class SaveFileManager
     File.open("saves/#{number.to_i}.yaml","r") { |file| savestate = YAML::load(file)}
     reinitialize(savestate)
   end
+
   private
 
   def read_file(file_name)
     File.open("saves/#{file_name}","r") do |file|
     while !file.eof?
         line = file.readline
-        break if line.include?("word_to_guess")
+        return if line.include? "computer"
+        next if line.include?("ruby/object") || line.include?("hangman: *1")
         puts line
       end
     end
@@ -212,12 +231,10 @@ class SaveFileManager
   def reinitialize(savestate)
     self.hangman.letter_attempts = savestate.letter_attempts
     self.hangman.remaining_guess = savestate.remaining_guess
-    self.hangman.word_to_guess = savestate.word_to_guess
-    self.hangman.player_guess = savestate.player_guess
-    puts "reinitialized"
+    self.hangman.player.word = savestate.player.word
+    self.hangman.computer.word = savestate.computer.word
   end
 end
-
 a = Hangman.new("5desk.txt")
 a.start
 

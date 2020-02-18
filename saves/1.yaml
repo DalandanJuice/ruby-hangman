@@ -5,13 +5,19 @@ letter_attempts:
 - i
 - o
 - u
-remaining_guess: 8
+- g
+- h
+- b
+- n
+- m
+- p
+remaining_guess: 5
 board: !ruby/object:Board
   hangman: *1
 save_file_manager: !ruby/object:SaveFileManager
   hangman: *1
 dictionary: 5desk.txt
 player: !ruby/object:Player
-  word: _ o _ _ _ _ e _ u _
+  word: P o _ _ p h e m u _
 computer: !ruby/object:Computer
   word: Polyphemus
